@@ -11,7 +11,7 @@ namespace Db.Hackathon.Core.API
         [JsonPropertyName("keyword")]
         public string Keyword { get; set; }
 
-        [JsonPropertyName("keywordAppeareanceCount")]
+        [JsonPropertyName("keywordAppearanceCount")]
         public int KeywordAppearanceCount { get; set; }
     }
 }

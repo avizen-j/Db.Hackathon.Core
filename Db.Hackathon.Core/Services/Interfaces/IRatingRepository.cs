@@ -9,10 +9,20 @@ namespace Db.Hackathon.Core.Services.Interfaces
 {
     public interface IRatingRepository
     {
+        // Rating table.
         public Task AddOrUpdateRatingAsync(RatingEntity rating);
 
         public Task<List<RatingEntity>> GetKeywordUsersAsync(string keyword);
 
-        public Task<List<TrendingKeyword>> GetTrendingKeywords();
+        public Task<List<TrendingKeyword>> GetTrendingKeywordsAsync();
+
+        public Task<List<TrendingExpert>> GetTrendingExpertsAsync();
+
+        public Task<AnalyticsEntity> GetLastUserAnalyticsRecordAsync(string username);
+
+        // Analytics table.
+        public Task AddUserAnalyticsRecord(AnalyticsEntity newUserAnalyticsRecord);
+
+        public Task UpdateUserAnalyticsRecord(AnalyticsEntity lastUserAnalyticsRecord);
     }
 }

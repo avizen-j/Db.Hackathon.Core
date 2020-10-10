@@ -19,7 +19,7 @@ namespace Db.Hackathon.Core.Services
             _ratingRepository = ratingRepository;
         }
 
-        public async Task<List<UserRating>> GetKeywordUsers(string keyword)
+        public async Task<List<UserRating>> GetKeywordUsersAsync(string keyword)
         {
             var mappedUsers = new List<UserRating>();
             var users = await _ratingRepository.GetKeywordUsersAsync(keyword);
@@ -43,7 +43,7 @@ namespace Db.Hackathon.Core.Services
             }
         }
 
-        public async Task AddUserKeywordRating(UserRating userRating)
+        public async Task AddUserKeywordRatingAsync(UserRating userRating)
         {
             var contributionRating = userRating.ReviewScore * 10;
             var ratingEntity = new RatingEntity
@@ -56,10 +56,10 @@ namespace Db.Hackathon.Core.Services
             await _ratingRepository.AddOrUpdateRatingAsync(ratingEntity);
         }
 
-        public async Task<List<TrendingKeyword>> GetTrendingKeywords()
+        public async Task<List<TrendingKeyword>> GetTrendingKeywordsAsync()
         {
             var mappedTrendingKeywords = new List<TrendingKeyword>();
-            List<TrendingKeyword> trendingKeywords = await _ratingRepository.GetTrendingKeywords();
+            List<TrendingKeyword> trendingKeywords = await _ratingRepository.GetTrendingKeywordsAsync();
 
             if (trendingKeywords.Count != 0)
             {
@@ -77,6 +77,45 @@ namespace Db.Hackathon.Core.Services
             else
             {
                 throw new InvalidOperationException($"No trending keywords found.");
+            }
+        }
+
+        public async Task<List<TrendingExpert>> GetTrendingExpertsAsync()
+        {
+            List<TrendingExpert> trendingExperts = await _ratingRepository.GetTrendingExpertsAsync();
+
+            if (trendingExperts.Count != 0)
+            {
+                return trendingExperts;
+            }
+            else
+            {
+                throw new InvalidOperationException($"No trending experts found.");
+            }
+        }
+
+        public async Task SetExpertReceivedCasesAsync(string username)
+        {
+            //await _ratingRepository.AddOrUpdateUserAnalytics(username);
+            var receivedDate = DateTime.Now;
+            var startOfPeriod = new DateTime(receivedDate.Year, receivedDate.Month, 1);
+            var lastUserAnalyticsRecord = await _ratingRepository.GetLastUserAnalyticsRecordAsync(username);
+
+            if (lastUserAnalyticsRecord != default)
+            {
+                lastUserAnalyticsRecord.ReceivedCases++;
+                await _ratingRepository.UpdateUserAnalyticsRecord(lastUserAnalyticsRecord);
+            }
+            else
+            {
+                var newUserAnalyticsRecord = new AnalyticsEntity
+                {
+                    Username = username,
+                    ReceivedCases = 0,
+                    SolvedCases = 0,
+                    Period = startOfPeriod,
+                };
+                await _ratingRepository.AddUserAnalyticsRecord(newUserAnalyticsRecord);
             }
         }
     }

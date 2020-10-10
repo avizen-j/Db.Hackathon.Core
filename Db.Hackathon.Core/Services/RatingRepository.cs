@@ -1,5 +1,6 @@
 ﻿using Db.Hackathon.Core.API;
 using Db.Hackathon.Core.Entities;
+using Db.Hackathon.Core.Models;
 using Db.Hackathon.Core.Repository;
 using Db.Hackathon.Core.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
@@ -24,8 +25,10 @@ namespace Db.Hackathon.Core.Services
             _logger = logger;
         }
 
+        // ------------------------ RATINGS ------------------------
+
         // Fetching existing data.
-        public async Task<List<TrendingKeyword>> GetTrendingKeywords()
+        public async Task<List<TrendingKeyword>> GetTrendingKeywordsAsync()
         {
             return await _context.Ratings.GroupBy(t => t.Keyword)
                                          .Select(t => new TrendingKeyword
@@ -33,6 +36,17 @@ namespace Db.Hackathon.Core.Services
                                              Keyword = t.Key,
                                              KeywordAppearanceCount = t.Count()
                                          })
+                                         .ToListAsync();
+        }
+
+        public async Task<List<TrendingExpert>> GetTrendingExpertsAsync()
+        {
+            return await _context.Ratings.Select(t => new TrendingExpert
+                                         {
+                                             Username = t.Username,
+                                             ContributionRating = t.ContributionRating
+                                         })
+                                         .OrderByDescending(t => t.ContributionRating)
                                          .ToListAsync();
         }
 
@@ -61,6 +75,27 @@ namespace Db.Hackathon.Core.Services
                 userRating.ContributionRating += rating.ContributionRating;
                 await _context.SaveChangesAsync();
             }
+        }
+
+
+        // ------------------------ ANALYTICS ------------------------
+
+        public async Task<AnalyticsEntity> GetLastUserAnalyticsRecordAsync(string username)
+        {
+            return await _context.Analytics.Where(t => t.Username == username)
+                                           .FirstOrDefaultAsync();
+        }
+
+        public async Task AddUserAnalyticsRecord(AnalyticsEntity newUserAnalyticsRecord)
+        {
+            _context.Add(newUserAnalyticsRecord);
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task UpdateUserAnalyticsRecord(AnalyticsEntity lastUserAnalyticsRecord)
+        {
+            _context.Update(lastUserAnalyticsRecord);
+            await _context.SaveChangesAsync();
         }
     }
 }

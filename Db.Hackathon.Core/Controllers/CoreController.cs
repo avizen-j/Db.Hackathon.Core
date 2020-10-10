@@ -37,7 +37,7 @@ namespace Db.Hackathon.Core.Controllers
         {
             try
             {
-                await _ratingService.AddUserKeywordRating(userRating);
+                await _ratingService.AddUserKeywordRatingAsync(userRating);
                 return Ok();
             }
             catch (Exception ex)
@@ -50,13 +50,32 @@ namespace Db.Hackathon.Core.Controllers
             }
         }
 
+        // Set/Update analytics for the user in order to track monthly activity of Received/Solved cases.
+        [HttpPost("requestExpertHelp")]
+        public async Task<IActionResult> RequestExpertHelp([FromBody]UserRating userRating)
+        {
+            try
+            {
+                await _ratingService.SetExpertReceivedCasesAsync(userRating.Username);
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, new ErrorResponse
+                {
+                    Message = "Error occured while setting user received cases.",
+                    Exception = ex.Message,
+                });
+            }
+        }
+
         // Get searched keywords and their appearance count.
         [HttpGet("getTrendingKeywords")]
         public async Task<IActionResult> GetTrendingKeywords()
         {
             try
             {
-                return Ok(await _ratingService.GetTrendingKeywords());
+                return Ok(await _ratingService.GetTrendingKeywordsAsync());
             }
             catch (Exception ex)
             {
@@ -68,19 +87,51 @@ namespace Db.Hackathon.Core.Controllers
             }
         }
 
-        // Get all experts(users) based on the keyword
-        [HttpPost("getKeywordUsers")]
-        public async Task<IActionResult> GetKeywordUsers([FromBody] string keyword)
+        // Get all experts(users) and rating based on the keyword
+        [HttpGet("users")]
+        public async Task<IActionResult> GetKeywordUsers([FromQuery]string keyword)
         {
             try
             {
-                return Ok(await _ratingService.GetKeywordUsers(keyword));
+                var keywordUsers = await _ratingService.GetKeywordUsersAsync(keyword);
+                if (keywordUsers.Count != 0)
+                {
+                    var serialisedKeywordUsers = new UserRatingResponse
+                    {
+                        UserRatings = keywordUsers,
+                    };
+                    return Ok(serialisedKeywordUsers);
+                }
+                else
+                {
+                    return StatusCode(StatusCodes.Status404NotFound, new ErrorResponse
+                    {
+                        Message = "No users found for provided keyword",
+                    });
+                }
             }
             catch (Exception ex)
             {
                 return StatusCode(StatusCodes.Status500InternalServerError, new ErrorResponse
                 {
                     Message = "Error occured while getting users by keyword",
+                    Exception = ex.Message,
+                });
+            }
+        }
+
+        [HttpGet("getTrendingExperts")]
+        public async Task<IActionResult> GetTrendingExperts()
+        {
+            try
+            {
+                return Ok(await _ratingService.GetTrendingExpertsAsync());
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, new ErrorResponse
+                {
+                    Message = "Error occured while getting trending experts",
                     Exception = ex.Message,
                 });
             }

@@ -11,6 +11,8 @@ namespace Db.Hackathon.Core.Repository
     {
         public DbSet<RatingEntity> Ratings { get; set; }
 
+        public DbSet<AnalyticsEntity> Analytics { get; set; }
+
         public MyContext(DbContextOptions options)
             : base(options)
         {
