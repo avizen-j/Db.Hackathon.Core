@@ -24,5 +24,11 @@ namespace Db.Hackathon.Core.Services.Interfaces
         public Task AddUserAnalyticsRecord(AnalyticsEntity newUserAnalyticsRecord);
 
         public Task UpdateUserAnalyticsRecord(AnalyticsEntity lastUserAnalyticsRecord);
+
+        public Task<AnalyticsEntity> GetUserCasesAsync(string username);
+
+        public Task<UserCasesTotalResponse> GetUserCasesTotalAsync();
+
+        public Task<List<UserCasesTotalResponse>> GetUserCasesTotalByMonthAsync();
     }
 }

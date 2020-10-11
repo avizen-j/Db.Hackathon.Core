@@ -5,6 +5,7 @@ using System.Net;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Db.Hackathon.Core.API;
+using Db.Hackathon.Core.Entities;
 using Db.Hackathon.Core.Models;
 using Db.Hackathon.Core.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
@@ -56,12 +57,19 @@ namespace Db.Hackathon.Core.Controllers
         {
             try
             {
+                if (userRating == null)
+                {
+                    return StatusCode(StatusCodes.Status404NotFound, new ErrorResponse
+                    {
+                        Message = "Provided user rating is null",
+                    });
+                }
                 await _ratingService.SetExpertReceivedCasesAsync(userRating.Username);
                 return Ok();
             }
             catch (Exception ex)
             {
-                return StatusCode(StatusCodes.Status500InternalServerError, new ErrorResponse
+                return StatusCode(StatusCodes.Status404NotFound, new ErrorResponse
                 {
                     Message = "Error occured while setting user received cases.",
                     Exception = ex.Message,
@@ -110,6 +118,13 @@ namespace Db.Hackathon.Core.Controllers
                     });
                 }
             }
+            catch (InvalidOperationException)
+            {
+                return StatusCode(StatusCodes.Status404NotFound, new ErrorResponse
+                {
+                    Message = "No users found for provided keyword",
+                });
+            }
             catch (Exception ex)
             {
                 return StatusCode(StatusCodes.Status500InternalServerError, new ErrorResponse
@@ -125,7 +140,20 @@ namespace Db.Hackathon.Core.Controllers
         {
             try
             {
-                return Ok(await _ratingService.GetTrendingExpertsAsync());
+                var trendingExperts = await _ratingService.GetTrendingExpertsAsync();
+                var serialisedKeywordUsers = new TrendingExpertsResponse
+                {
+                    TrendingExperts = trendingExperts,
+                };
+
+                return Ok(serialisedKeywordUsers);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return StatusCode(StatusCodes.Status404NotFound, new ErrorResponse
+                {
+                    Message = ex.Message,
+                });
             }
             catch (Exception ex)
             {
@@ -137,22 +165,82 @@ namespace Db.Hackathon.Core.Controllers
             }
         }
 
-        // Get ratings for provided user list.
-        [HttpPost("getUsersRating")]
-        public async Task<IActionResult> GetUsersRating([FromBody] string[] userIds)
+        // Get user cases for provided username.
+        [HttpGet("getUserCases")]
+        public async Task<IActionResult> GetUserCasesAsync([FromQuery] string username)
         {
-            var userRatingList = new List<UserRating>();
-
-            foreach (var userId in userIds)
+            try
             {
-                userRatingList.Add(new UserRating
+                var userCases = await _ratingService.GetUserCasesAsync(username);
+                return Ok(userCases);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return StatusCode(StatusCodes.Status404NotFound, new ErrorResponse
                 {
-                    Username = userId,
-                    ContributionRating = Random.Next(1, 100),
+                    Message = ex.Message,
                 });
             }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, new ErrorResponse
+                {
+                    Message = "Error occured while getting user keywords",
+                    Exception = ex.Message,
+                });
+            }
+        }
 
-            return Ok(JsonSerializer.Serialize(userRatingList));
+        // Get total user cases.
+        [HttpGet("getTotalUserCases")]
+        public async Task<IActionResult> GetUserCasesTotalAsync()
+        {
+            try
+            {
+                var userTotalCases = await _ratingService.GetUserCasesTotalAsync();
+                return Ok(userTotalCases);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return StatusCode(StatusCodes.Status404NotFound, new ErrorResponse
+                {
+                    Message = ex.Message,
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, new ErrorResponse
+                {
+                    Message = "Error occured while getting user keywords",
+                    Exception = ex.Message,
+                });
+            }
+        }
+
+        // Get total user cases by month.
+        [HttpGet("getTotalUserCasesByMonth")]
+        public async Task<IActionResult> GetUserCasesTotalByMonthAsync()
+        {
+            try
+            {
+                var userTotalCases = await _ratingService.GetUserCasesTotalByMonthAsync();
+                return Ok(userTotalCases);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return StatusCode(StatusCodes.Status404NotFound, new ErrorResponse
+                {
+                    Message = ex.Message,
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, new ErrorResponse
+                {
+                    Message = "Error occured while getting user keywords",
+                    Exception = ex.Message,
+                });
+            }
         }
     }
 }

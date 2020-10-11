@@ -17,5 +17,11 @@ namespace Db.Hackathon.Core.Services.Interfaces
         public Task<List<TrendingExpert>> GetTrendingExpertsAsync();
 
         public Task SetExpertReceivedCasesAsync(string username);
+
+        public Task<UserCasesResponse> GetUserCasesAsync(string username);
+
+        public Task<UserCasesTotalResponse> GetUserCasesTotalAsync();
+
+        public Task<List<UserCasesTotalResponse>> GetUserCasesTotalByMonthAsync();
     }
 }

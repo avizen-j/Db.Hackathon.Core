@@ -53,6 +53,7 @@ namespace Db.Hackathon.Core.Services
                 Keyword = userRating.Keyword,
             };
 
+            await SetExpertSolvedCasesAsync(userRating.Username);
             await _ratingRepository.AddOrUpdateRatingAsync(ratingEntity);
         }
 
@@ -111,11 +112,71 @@ namespace Db.Hackathon.Core.Services
                 var newUserAnalyticsRecord = new AnalyticsEntity
                 {
                     Username = username,
-                    ReceivedCases = 0,
+                    ReceivedCases = 1,
                     SolvedCases = 0,
                     Period = startOfPeriod,
                 };
                 await _ratingRepository.AddUserAnalyticsRecord(newUserAnalyticsRecord);
+            }
+        }
+
+        public async Task SetExpertSolvedCasesAsync(string username)
+        {
+            //await _ratingRepository.AddOrUpdateUserAnalytics(username);
+            var receivedDate = DateTime.Now;
+            var startOfPeriod = new DateTime(receivedDate.Year, receivedDate.Month, 1);
+            var lastUserAnalyticsRecord = await _ratingRepository.GetLastUserAnalyticsRecordAsync(username);
+
+            if (lastUserAnalyticsRecord != default)
+            {
+                lastUserAnalyticsRecord.SolvedCases++;
+                await _ratingRepository.UpdateUserAnalyticsRecord(lastUserAnalyticsRecord);
+            }
+            else
+            {
+                throw new InvalidOperationException($"Cannot increase '{username}' solved cases count because there is no received cases.");
+            }
+        }
+
+        public async Task<UserCasesResponse> GetUserCasesAsync(string username)
+        {
+            var userAnalyticsRecord = await _ratingRepository.GetUserCasesAsync(username);
+
+            if (userAnalyticsRecord != default)
+            {
+                var userCases = new UserCasesResponse
+                {
+                    Username = username,
+                    ReceivedCases = userAnalyticsRecord.ReceivedCases,
+                    SolvedCases = userAnalyticsRecord.SolvedCases,
+                };
+
+                return userCases;
+            }
+            else
+            {
+                throw new InvalidOperationException($"No cases for user found.");
+            }
+        }
+
+        public async Task<UserCasesTotalResponse> GetUserCasesTotalAsync()
+        {
+            var userCasesTotalResponse = await _ratingRepository.GetUserCasesTotalAsync();
+
+            return userCasesTotalResponse ?? throw new InvalidOperationException($"No total received/solved cases found.");
+        }
+
+        public async Task<List<UserCasesTotalResponse>> GetUserCasesTotalByMonthAsync()
+        {
+            var userCasesTotalResponseByMonth = await _ratingRepository.GetUserCasesTotalByMonthAsync();
+
+            if (userCasesTotalResponseByMonth.Count != 0)
+            {
+                return userCasesTotalResponseByMonth;
+            }
+            else
+            {
+                throw new InvalidOperationException($"No total received/solved cases found by month.");
             }
         }
     }

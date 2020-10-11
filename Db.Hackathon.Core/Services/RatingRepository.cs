@@ -41,10 +41,11 @@ namespace Db.Hackathon.Core.Services
 
         public async Task<List<TrendingExpert>> GetTrendingExpertsAsync()
         {
-            return await _context.Ratings.Select(t => new TrendingExpert
+            return await _context.Ratings.GroupBy(x => x.Username)
+                                         .Select(t => new TrendingExpert
                                          {
-                                             Username = t.Username,
-                                             ContributionRating = t.ContributionRating
+                                             Username = t.Key,
+                                             ContributionRating = t.Sum(x => x.ContributionRating)
                                          })
                                          .OrderByDescending(t => t.ContributionRating)
                                          .ToListAsync();
@@ -83,6 +84,7 @@ namespace Db.Hackathon.Core.Services
         public async Task<AnalyticsEntity> GetLastUserAnalyticsRecordAsync(string username)
         {
             return await _context.Analytics.Where(t => t.Username == username)
+                                           .OrderByDescending(t => t.Period)
                                            .FirstOrDefaultAsync();
         }
 
@@ -96,6 +98,35 @@ namespace Db.Hackathon.Core.Services
         {
             _context.Update(lastUserAnalyticsRecord);
             await _context.SaveChangesAsync();
+        }
+
+        public Task<AnalyticsEntity> GetUserCasesAsync(string username)
+        {
+            return _context.Analytics.Where(t => t.Username == username)
+                                     .FirstOrDefaultAsync();
+        }
+
+        public async Task<UserCasesTotalResponse> GetUserCasesTotalAsync()
+        {
+            return await _context.Analytics.GroupBy(x => true)
+                                           .Select(x => new UserCasesTotalResponse
+                                           {
+                                               ReceivedCases = x.Sum(t => t.ReceivedCases),
+                                               SolvedCases = x.Sum(t => t.SolvedCases),
+                                           })
+                                           .FirstOrDefaultAsync();
+        }
+
+        public async Task<List<UserCasesTotalResponse>> GetUserCasesTotalByMonthAsync()
+        {
+            return await _context.Analytics.GroupBy(x => x.Period)
+                                           .Select(x => new UserCasesTotalResponse
+                                           {
+                                               Period = x.Key,
+                                               ReceivedCases = x.Sum(t => t.ReceivedCases),
+                                               SolvedCases = x.Sum(t => t.SolvedCases),
+                                           })
+                                           .ToListAsync();
         }
     }
 }
